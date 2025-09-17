@@ -4,9 +4,17 @@ const router = express.Router();
 const departmentController = require('../controllers/departmentController');
 
 router.get('/', departmentController.getAllDepartments);
-router.post('/', departmentController.createDepartment);
-router.get('/:id', departmentController.getDepartmentById);
-router.put('/:id', departmentController.updateDepartment);
-router.delete('/:id', departmentController.deleteDepartment);
+router.post('/', 
+    departmentController.validateDepartment,
+    departmentController.createDepartment);
+router.get('/:id', 
+    departmentController.validateId,
+    departmentController.getDepartmentById);
+router.put('/:id',
+    departmentController.validateId, 
+    departmentController.updateDepartment);
+router.delete('/:id', 
+    departmentController.validateId, 
+    departmentController.deleteDepartment);
 
 module.exports = router;

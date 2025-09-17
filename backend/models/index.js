@@ -16,6 +16,15 @@ const sequelize = new Sequelize(
             min: 0,
             acquire: 30000,
             idle: 10000
+        },
+        dialectOptions: {
+            ssl: {
+                require: true,
+                rejectUnauthorized: false 
+            }
+        },
+        retry: {
+            max: 3 
         }
     }
 );
@@ -24,6 +33,7 @@ const sequelize = new Sequelize(
 sequelize.authenticate()
     .catch(err => {
         console.error('❌ Ошибка внутри модели:', err.message);
+        process.exit(1);
     });
 
 module.exports = { sequelize };
