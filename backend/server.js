@@ -14,16 +14,20 @@ const app = express();
 const PORT = process.env.SERVER_PORT || 3000;
 
 const corsOptions = {
-    origin: process.env.ALLOWED_ORIGIN || 'http://localhost:3000',
+    origin: ["http://localhost:5173", 'http://localhost:3000'],
     optionsSuccessStatus: 200
   };
-const limiter = rateLimit({
-    windowMs: 5 * 60 * 1000, // 15 минут
-    max: 100, // максимум 100 запросов
-    message: { error: 'Слишком много запросов, попробуйте позже' }
-});
 
-app.use(limiter);
+
+// if (process.env.ENABLE_SECURTY || false){
+//     const limiter = rateLimit({
+//         windowMs: 5 * 60 * 1000, // 15 минут
+//         max: 100, // максимум 100 запросов
+//         message: { error: 'Слишком много запросов, попробуйте позже' }
+//     });
+//     app.use(limiter);
+// }
+
 app.use(helmet());
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));

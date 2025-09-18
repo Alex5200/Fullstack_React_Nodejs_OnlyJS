@@ -3,7 +3,6 @@ const { sequelize } = require('../models');
 const Employee = require('../models/Employee');
 const Department = require('../models/Department');
 
-// Получить всех сотрудников с пагинацией и JOIN (через сырой SQL, безопасно)
 exports.getAllEmployees = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -14,23 +13,21 @@ exports.getAllEmployees = async (req, res) => {
     }
 
     try {
-        const query = `
-      SELECT e.*, d.department_name
-      FROM employees e
-      LEFT JOIN departments d ON e.department_id = d.department_id
-      ORDER BY e.employee_id
-      LIMIT $1 OFFSET $2;
-    `;
+            const query = `
+            SELECT * FROM employees   
+                ORDER BY employee_id  
+                    LIMIT $1 OFFSET $2;
+        `;
 
         const employees = await sequelize.query(query, {
             type: sequelize.QueryTypes.SELECT,
-            bind: [limit, offset] // ✅ Защита от SQL-инъекций
+            bind: [limit, offset] 
         });
 
         res.status(200).json({
             page,
             limit,
-            data: employees
+            employees
         });
     } catch (error) {
         console.error('Ошибка получения сотрудников:', error.message);
@@ -52,8 +49,16 @@ exports.createEmployee = async (req, res) => {
 // Получить сотрудника по ID с отделом
 exports.getEmployeeById = async (req, res) => {
     try {
-        const employee = await Employee.findByPk(req.params.id, {
-            include: [{ model: Department, as: 'Department' }]
+        const { id } = req.params; // department_id
+
+        const employee = await Employee.findAll({
+            where: { department_id: id },
+            include: [{ 
+                model: Department, 
+                as: 'Department', 
+                attributes: ['department_name'] // опционально: только название
+            }],
+            order: [['employee_id', 'ASC']] // сортировка по ID
         });
         if (!employee) {
             return res.status(404).json({ message: 'Сотрудник не найден' });
