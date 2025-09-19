@@ -1,7 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'; 
-
+import FromsPeople from './components/FormsPeople';
+import ListPeople from './components/ListPeople';
+import CreateDepart from './components/CreateDepart';
+import Content from './components/Content';
+import Sidebar from './components/Sidebar';
 // import 'ag-grid-community/styles/ag-grid.css';
 // import 'ag-grid-community/styles/ag-theme-quartz.css';
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -229,7 +233,7 @@ const handleDepartmentSelect = async (deptId) => {
   };
 
   // 🆕 Удаление сотрудника
-  const handleDeleteEmployee = async (employee_id) => {
+  const handleDeleteEmployee = useCallback(async (employee_id) => {
     if (!window.confirm("Вы уверены, что хотите удалить сотрудника?")) return;
 
     try {
@@ -245,7 +249,7 @@ const handleDepartmentSelect = async (deptId) => {
     } catch (err) {
       alert("Ошибка: " + err.message);
     }
-  };
+  }, [selectedDeptId]);
 
   // 🆕 Начать редактирование
   const handleEditEmployee = (emp) => {
@@ -313,398 +317,63 @@ const handleDepartmentSelect = async (deptId) => {
         onRefresh={loadDepartments}
         setShowCreateForm={setShowCreateForm}
         showCreateForm={showCreateForm}
+        newDeptName={newDeptName}
+        setNewDeptName={setNewDeptName}
+        handleCreateDepartment={handleCreateDepartment}
+        creating={creating}
+        createError={createError}
         onCreate={() => setShowCreateForm(true)}
         onSelectDepartment={handleDepartmentSelect}
       />
 
       <main className="flex-1 p-6 overflow-y-auto">
-        {/* 🆕 Форма создания отдела */}
-        {showCreateForm && (
-          <div className="mb-8 p-6 bg-white rounded-lg shadow-md max-w-md">
-            <h2 className="text-xl font-bold mb-4">Создать новый отдел</h2>
-            <form onSubmit={handleCreateDepartment}>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Название отдела</label>
-                <input
-                  type="text"
-                  value={newDeptName}
-                  onChange={(e) => setNewDeptName(e.target.value)}
-                  placeholder="Введите название отдела"
-                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-              {createError && (
-                <p className="text-red-500 text-sm mb-3">{createError}</p>
-              )}
-              
-              <div className="flex space-x-3">
-                <button
-                  type="submit"
-                  disabled={creating}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 transition"
-                >
-                  {creating ? (
-                    <span className="flex items-center">
-                      <svg className="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Создание...
-                    </span>
-                  ) : (
-                    "Создать"
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowCreateForm(false)}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition"
-                >
-                  Отмена
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
+        <CreateDepart
+        showCreateForm = {showCreateForm}
+        newDeptName = {newDeptName}
+        setNewDeptName = {setNewDeptName}
+        handleCreateDepartment = {handleCreateDepartment}
+        creating = {creating}
+        createError = {createError}
+        />
 
-        {/* 📌 Основной контент: сотрудники */}
-        <div className="mb-6">
-          <div className="flex flex-wrap gap-3 items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-gray-800">
-              {selectedDeptId
-                ? (() => {
-                    const dept = departments.find(d => d.department_id === selectedDeptId);
-                    return dept ? `Сотрудники отдела: ${dept.department_name}` : `Сотрудники отдела #${selectedDeptId}`;
-                  })()
-                : "Выберите отдел"}
-            </h1>
+       <Content
+        selectedDeptId = {selectedDeptId}
+        departments = {departments}
+        showCreateForm = {showCreateForm}
+        activeTab = {activeTab}
+        setActiveTab = {setActiveTab}
+        setEditingEmployee = {setEditingEmployee}
+        setEmployeeForm = {setEmployeeForm}
+        setShowEmployeeForm = {setShowEmployeeForm}
+        setSelectedDeptId = {setSelectedDeptId}
+       />
 
-            {selectedDeptId && showCreateForm && (
-              <button
-                onClick={() => {
-                  setEditingEmployee(null);
-                  setEmployeeForm({ full_name: '', salary: '', hire_date: '', age: '' });
-                  setShowEmployeeForm(true);
-                }}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-sm whitespace-nowrap"
-              >
-                 Добавить сотрудника
-              </button>
-            )}
-          </div>
+       <FromsPeople
+        showEmployeeForm = { showEmployeeForm}
+        editingEmployee = {editingEmployee}
+        employeeForm = {employeeForm}
+        setEmployeeForm = {setEmployeeForm}
+        handleSaveEmployee = {handleSaveEmployee}
+        setEditingEmployee = {setEditingEmployee}
+        formError = {formError}
+        formLoading = {formLoading}
+        setShowEmployeeForm = {setShowEmployeeForm}
+        />
+      
 
-          {/* 🆕 Табы переключения */}
-          {selectedDeptId && (
-            <div className="border-b border-gray-300 mb-4">
-              <nav className="-mb-px flex space-x-6">
-                <button
-                  onClick={() => setActiveTab('cards')}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === 'cards'
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  Карточки
-                </button>
-                <button
-                  onClick={() => setActiveTab('grid')}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === 'grid'
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  Таблица (Ag Grid)
-                </button>
-                 <button
-                onClick={() => {
-                  setActiveTab('all');
-                  setSelectedDeptId(null); // Сбрасываем отдел
-                }}
-                className={`py-2 px-3 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
-                  activeTab === 'all'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                👥 Все сотрудники
-              </button>
-              </nav>
-            </div>
-          )}
-        </div>
-
-        {/* 🆕 Форма сотрудника */}
-        {showEmployeeForm && (
-          <div className="mb-6 p-5 bg-white rounded-lg shadow-md max-w-2xl">
-            <h2 className="text-xl font-bold mb-4">
-              {editingEmployee ? "Редактировать сотрудника" : "Добавить сотрудника"}
-            </h2>
-
-            <form onSubmit={handleSaveEmployee} className="space-y-4">
-              <div>
-                <label className="block text-gray-700 mb-1">ФИО</label>
-                <input
-                  type="text"
-                  value={employeeForm.full_name}
-                  onChange={(e) => setEmployeeForm(prev => ({ ...prev, full_name: e.target.value }))}
-                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-gray-700 mb-1">Зарплата (₽)</label>
-                  <input
-                    type="number"
-                    value={employeeForm.salary}
-                    onChange={(e) => setEmployeeForm(prev => ({ ...prev, salary: e.target.value }))}
-                    className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 mb-1">Возраст</label>
-                  <input
-                    type="number"
-                    value={employeeForm.age}
-                    onChange={(e) => setEmployeeForm(prev => ({ ...prev, age: e.target.value }))}
-                    className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 mb-1">Дата найма</label>
-                  <input
-                    type="date"
-                    value={employeeForm.hire_date}
-                    onChange={(e) => setEmployeeForm(prev => ({ ...prev, hire_date: e.target.value }))}
-                    className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-              </div>
-
-              {formError && <p className="text-red-500 text-sm">{formError}</p>}
-
-              <div className="flex space-x-3 pt-2">
-                <button
-                  type="submit"
-                  disabled={formLoading}
-                  className="px-4 py-2 bg-blue-600 text-black rounded hover:bg-blue-700 disabled:opacity-50 transition"
-                >
-                  {formLoading ? 'Сохранение...' : 'Сохранить'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowEmployeeForm(false);
-                    setEditingEmployee(null);
-                  }}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition"
-                >
-                  Отмена
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-
-        {/* 📋 Список сотрудников — с переключением вкладок */}
-        {loadingEmployees || loadingAll ? (
-          <div className="flex items-center">
-            <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-2"></div>
-            <span>Загрузка сотрудников...</span>
-          </div>
-        ) : activeTab === 'all' ? (
-          allEmployees.length > 0 ? (
-            activeTab === 'cards' ? (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {allEmployees.map((emp) => (
-                  <div key={emp.employee_id + emp.hire_date} className="bg-white p-4 rounded-lg shadow-sm border relative">
-                    {showCreateForm && (
-                      <div className="absolute top-2 right-2 flex space-x-1">
-                        <button
-                          onClick={() => handleEditEmployee(emp)}
-                          className="text-blue-600 hover:text-blue-800 text-xs p-1"
-                          title="Редактировать"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          onClick={() => handleDeleteEmployee(emp.employee_id)}
-                          className="text-red-600 hover:text-red-800 text-xs p-1"
-                          title="Удалить"
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    )}
-
-                    <h3 className="font-bold text-gray-800 mt-4">{emp.full_name}</h3>
-                    <p className="text-gray-600">Зарплата: <span className="font-medium">{emp.salary.toLocaleString('ru-RU')} ₽</span></p>
-                    <p className="text-gray-600">Возраст: {emp.age} лет</p>
-                    <p className="text-gray-600">Принят: {emp.hire_date}</p>
-                    {emp.Department?.department_name && (
-                      <p className="text-xs text-gray-500 mt-1">Отдел: {emp.Department.department_name}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="ag-theme-quartz" style={{ height: 500, width: '100%' }}>
-                <AgGridReact
-                  rowData={allEmployees}
-                  columnDefs={gridColumnDefs}
-                  pagination={true}
-                  paginationPageSize={10}
-                  domLayout="autoHeight"
-                  animateRows={true}
-                />
-              </div>
-            )
-          ) : (
-            <p className="text-gray-500">Сотрудники не найдены.</p>
-          )
-        ) : employees.length > 0 ? (
-          activeTab === 'cards' ? (
-            // 🃏 Карточки
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {employees.map((emp) => (
-                <div key={emp.employee_id} className="bg-white p-4 rounded-lg shadow-sm border relative">
-                  {showCreateForm ? (
-                    <div className="absolute top-2 right-2 flex space-x-1">
-                      <button
-                        onClick={() => handleEditEmployee(emp)}
-                        className="text-blue-600 hover:text-blue-800 text-xs p-1"
-                        title="Редактировать"
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        onClick={() => handleDeleteEmployee(emp.employee_id)}
-                        className="text-red-600 hover:text-red-800 text-xs p-1"
-                        title="Удалить"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  ) : null}
-
-                  <h3 className="font-bold text-gray-800 mt-4">{emp.full_name}</h3>
-                  <p className="text-gray-600">Зарплата: <span className="font-medium">{emp.salary.toLocaleString('ru-RU')} ₽</span></p>
-                  <p className="text-gray-600">Возраст: {emp.age} лет</p>
-                  <p className="text-gray-600">Принят: {emp.hire_date}</p>
-                  {emp.Department?.department_name && (
-                    <p className="text-xs text-gray-500 mt-1">Отдел: {emp.Department.department_name}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            // 📊 Ag Grid таблица
-            <div className="ag-theme-quartz" style={{ height: 500, width: '100%' }}>
-              <AgGridReact
-                rowData={employees}
-                columnDefs={gridColumnDefs}
-                pagination={true}
-                paginationPageSize={10}
-                domLayout="autoHeight"
-                animateRows={true}
-              />
-            </div>
-          )
-        ) : selectedDeptId ? (
-          <p className="text-gray-500">В этом отделе нет сотрудников.</p>
-        ) : (
-          <p className="text-gray-500">Выберите отдел в меню слева или перейдите на вкладку "Все сотрудники".</p>
-        )}
+       <ListPeople
+        loadingEmployees={loadingEmployees}
+        loadingAll={loadingAll}
+        allEmployees={allEmployees}
+        employees={employees}
+        activeTab={activeTab}
+        showCreateForm={showCreateForm}
+        handleEditEmployee={handleEditEmployee}
+        handleDeleteEmployee={handleDeleteEmployee}
+        gridColumnDefs={gridColumnDefs}
+        selectedDeptId={selectedDeptId}
+       />
       </main>
-    </div>
-  );
-}
-
-// 🧩 Sidebar — вынесен как компонент внутри того же файла
-function Sidebar({ departments, loading, error, onRefresh, onCreate, onSelectDepartment, showCreateForm, setShowCreateForm }) {
-  const SkeletonLoader = () => (
-    <div className="w-64 bg-gray-50 h-screen p-4 border-r border-gray-200">
-      <div className="h-6 bg-gray-200 rounded mb-4 animate-pulse"></div>
-      <ul className="space-y-3">
-        {[...Array(5)].map((_, i) => (
-          <li key={i} className="flex justify-between items-center">
-            <div className="h-5 bg-gray-200 rounded w-3/4 animate-pulse"></div>
-            <div className="h-5 bg-gray-200 rounded w-8 animate-pulse"></div>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-
-  if (loading) return <SkeletonLoader />;
-
-  if (error) return (
-    <div className="w-64 bg-gray-50 h-screen p-4 border-r border-gray-200 flex flex-col items-center justify-center text-red-500 text-center">
-      <p className="font-medium mb-2">{error}</p>
-      <button
-        onClick={onRefresh}
-        className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition flex items-center"
-      >
-        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-        </svg>
-        Обновить
-      </button>
-    </div>
-  );
-
-  return (
-    <div className="w-64 bg-gray-50 h-screen p-4 border-r border-gray-200 flex flex-col">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-bold text-gray-800">Отделы</h2>
-        <button
-          onClick={onRefresh}
-          title="Обновить список"
-          className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-        </button>
-      </div>
-
-      <ul className="space-y-2 flex-1">
-        {departments.map(dept => (
-          <li key={dept.department_id}>
-            <button
-              onClick={() => onSelectDepartment(dept.department_id)}
-              className="w-full bg-blue-500 text-left text-white px-3 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition font-medium"
-            >
-              {dept.department_name}
-            </button>
-          </li>
-        ))}
-      </ul>
-
-      {!showCreateForm ? (
-        <button
-          onClick={onCreate}
-          className="mt-4 w-full py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition flex items-center justify-center space-x-2"
-        >
-          <span> Настройки</span>
-        </button>
-      ) : (
-        <button
-          onClick={() => setShowCreateForm(false)}
-          className="mt-4 w-full py-2 bg-blue-600 text-black font-medium rounded-lg hover:bg-blue-700 transition flex items-center justify-center space-x-2"
-        >
-          <span>Отмена</span>
-        </button>
-      )}
     </div>
   );
 }
