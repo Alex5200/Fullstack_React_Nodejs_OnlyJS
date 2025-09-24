@@ -19,14 +19,7 @@ const corsOptions = {
   };
 
 
-// if (process.env.ENABLE_SECURTY || false){
-//     const limiter = rateLimit({
-//         windowMs: 5 * 60 * 1000, // 15 минут
-//         max: 100, // максимум 100 запросов
-//         message: { error: 'Слишком много запросов, попробуйте позже' }
-//     });
-//     app.use(limiter);
-// }
+
 
 app.use(helmet());
 app.use(cors(corsOptions));
